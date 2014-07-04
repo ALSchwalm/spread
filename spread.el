@@ -26,7 +26,6 @@
 (defvar spread-rows 40)
 (defvar spread-columns 40)
 (defvar spread-values 5)
-(defvar spread-prev-value nil)
 (defvar spread-area ())
 
 (defun spread-number-to-char (number)
@@ -38,39 +37,50 @@
   (save-excursion
     (unless (member (point) spread-area)
       (setq spread-area (cons (point) spread-area))
-      (when (eq (following-char) spread-prev-value)
+      (when (or (eq (following-char) ?_)
+                (eq (following-char) value))
         (delete-char 1)
-        (insert value)
+        (insert ?_)
         (backward-char)
 
         (save-excursion (forward-char)
-                        (spread-spread-point value))
+                        (unless (eq (following-char) ?_)
+                          (spread-spread-point value)))
 
-        (save-excursion (forward-line -1)
-                        (spread-spread-point value))
+        (save-excursion (artist-previous-line 1)
+                        (unless (eq (following-char) ?_)
+                          (spread-spread-point value)))
 
-        (save-excursion (forward-line)
-                        (spread-spread-point value))
+        (save-excursion (artist-previous-line -1)
+                        (unless (eq (following-char) ?_)
+                          (spread-spread-point value)))
 
         (save-excursion (backward-char)
-                        (spread-spread-point value))))))
+                        (unless (eq (following-char) ?_)
+                          (spread-spread-point value)))))))
 
 (defun spread-spread (value)
   "Spread to all adjacent cells containing VALUE."
   (interactive)
-  (spread-spread-point (spread-number-to-char value))
-  (setq spread-prev-value (spread-number-to-char value))
-  (setq spread-area ()))
+  (save-excursion
+   (beginning-of-buffer)
+   (while (re-search-forward "_" nil t)
+     (backward-char)
+     (spread-spread-point (spread-number-to-char value))
+     (forward-char))
+   (setq spread-area ())))
 
 (defun spread-generate-field (rows columns values)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values."
   (erase-buffer)
   (--dotimes rows
     (--dotimes columns
-      (insert (number-to-string (random values))))
+      (insert (number-to-string (1+ (random values)))))
     (newline))
   (forward-line -1)
-  (setq spread-prev-value (following-char)))
+  (delete-char 1)
+  (insert ?_)
+  (backward-char))
 
 (defun spread (&optional rows columns values)
   "Play a game with size determined by ROWS and COLUMNS.
@@ -85,7 +95,12 @@ The game will have VALUES different values."
 (defvar spread-mode-map nil)
 (unless spread-mode-map
   (setq spread-mode-map (make-keymap))
-  (suppress-keymap spread-mode-map t))
+  (suppress-keymap spread-mode-map t)
+  (define-key spread-mode-map "1" (lambda () (interactive) (spread-spread 1)))
+  (define-key spread-mode-map "2" (lambda () (interactive) (spread-spread 2)))
+  (define-key spread-mode-map "3" (lambda () (interactive) (spread-spread 3)))
+  (define-key spread-mode-map "4" (lambda () (interactive) (spread-spread 4)))
+  (define-key spread-mode-map "5" (lambda () (interactive) (spread-spread 5))))
 
 (define-derived-mode spread-mode nil "spread"
   "A simple mode for spread
