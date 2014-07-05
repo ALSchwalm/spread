@@ -41,9 +41,10 @@
        (insert ?_)
        (backward-char)
 
-       (save-excursion (forward-char)
-                       (unless (eq (following-char) ?_)
-                         (spread-spread-point value)))
+       (unless (eolp)
+        (save-excursion (forward-char)
+                        (unless (eq (following-char) ?_)
+                          (spread-spread-point value))))
 
        (save-excursion (artist-previous-line 1)
                        (unless (eq (following-char) ?_)
@@ -53,7 +54,7 @@
                        (unless (eq (following-char) ?_)
                          (spread-spread-point value)))
 
-       (unless (bobp)
+       (unless (bolp)
         (save-excursion (backward-char)
                         (unless (eq (following-char) ?_)
                           (spread-spread-point value))))))))
@@ -95,18 +96,22 @@ The game will have VALUES different values."
   (spread-generate-field rows columns values)
   (setq buffer-read-only t))
 
+(defun spread-with-key (n)
+  "Bind the N number key to (spread-spread N)."
+  (lexical-let ((n n)) #'(lambda ()
+                           (interactive)
+                           (spread-spread n))))
+
 (defvar spread-mode-map nil)
 (unless spread-mode-map
   (setq spread-mode-map (make-keymap))
   (suppress-keymap spread-mode-map t)
-  (define-key spread-mode-map "1" (lambda () (interactive) (spread-spread 1)))
-  (define-key spread-mode-map "2" (lambda () (interactive) (spread-spread 2)))
-  (define-key spread-mode-map "3" (lambda () (interactive) (spread-spread 3)))
-  (define-key spread-mode-map "4" (lambda () (interactive) (spread-spread 4)))
-  (define-key spread-mode-map "5" (lambda () (interactive) (spread-spread 5))))
+  (--dotimes 10
+    (define-key spread-mode-map (number-to-string it)
+      (spread-with-key it))))
 
 (define-derived-mode spread-mode nil "spread"
-  "A simple mode for spread
+  "A mode for playing spread
 \\{spread-mode-map}"
   (kill-all-local-variables)
   (use-local-map spread-mode-map)
