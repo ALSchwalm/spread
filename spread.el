@@ -22,6 +22,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 'artist)
 
 (defvar spread-rows 40)
 (defvar spread-columns 40)
