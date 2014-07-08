@@ -107,6 +107,7 @@ The game will have VALUES different values."
 (unless spread-mode-map
   (setq spread-mode-map (make-keymap))
   (suppress-keymap spread-mode-map t)
+  (define-key spread-mode-map "q" 'bury-buffer)
   (--dotimes 10
     (define-key spread-mode-map (number-to-string it)
       (spread-with-key it))))
