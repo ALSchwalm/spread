@@ -27,6 +27,7 @@
 (defvar spread-rows 40)
 (defvar spread-columns 40)
 (defvar spread-values 5)
+(defvar spread-turns 0)
 
 (defun spread-number-to-char (number)
   "Convert NUMBER to a character."
@@ -65,11 +66,22 @@
   (interactive)
   (save-excursion
    (beginning-of-buffer)
+   (setq spread-turns (1+ spread-turns))
+   (spread-update-turns)
    (while (re-search-forward "_" nil t)
      (backward-char)
      (spread-spread-point (spread-number-to-char value))
      (forward-char))
    (setq spread-area ())))
+
+(defun spread-update-turns ()
+  "Update the number of turns displayed."
+  (save-excursion
+   (let ((buffer-read-only nil))
+     (end-of-buffer)
+     (beginning-of-line)
+     (kill-line)
+     (insert (format "    Turns: %d" spread-turns)))))
 
 (defun spread-generate-field (rows columns values)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values."
@@ -89,12 +101,17 @@
 The game will have VALUES different values."
   (interactive)
   (switch-to-buffer "*spread*")
-  (spread-mode)
-  (buffer-disable-undo (current-buffer))
-  (setq rows (if (not rows) spread-rows rows))
-  (setq columns (if (not columns) spread-columns columns))
-  (setq values (if (not values) spread-values values))
-  (spread-generate-field rows columns values)
+  (let ((buffer-read-only nil))
+   (spread-mode)
+   (buffer-disable-undo (current-buffer))
+   (setq rows (if (not rows) spread-rows rows))
+   (setq columns (if (not columns) spread-columns columns))
+   (setq values (if (not values) spread-values values))
+   (setq spread-turns 0)
+   (spread-generate-field rows columns values)
+   (end-of-buffer)
+   (insert "\n    Turns: 0")
+   (setq cursor-type nil))
   (setq buffer-read-only t))
 
 (defun spread-with-key (n)
