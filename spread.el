@@ -28,51 +28,59 @@
 (defvar spread-columns 40)
 (defvar spread-values 5)
 (defvar spread-turns 0)
+(defvar spread-player-char ?_)
+(defvar spread-ai-char ?|)
+(defvar spread-ai-last-move nil)
 
 (defun spread-number-to-char (number)
   "Convert NUMBER to a character."
   (+ number 48))
 
-(defun spread-spread-point (value)
+(defun spread-spread-point (value char)
   "For the current point, spread to all neightbors containing VALUE."
   (let ((buffer-read-only nil))
    (save-excursion
-     (when (or (eq (following-char) ?_)
+     (when (or (eq (following-char) char)
                (eq (following-char) value))
        (delete-char 1)
-       (insert ?_)
+       (insert char)
        (backward-char)
 
        (unless (eolp)
         (save-excursion (forward-char)
-                        (unless (eq (following-char) ?_)
-                          (spread-spread-point value))))
+                        (unless (eq (following-char) char)
+                          (spread-spread-point value char))))
 
        (save-excursion (artist-previous-line 1)
-                       (unless (eq (following-char) ?_)
-                         (spread-spread-point value)))
+                       (unless (eq (following-char) char)
+                         (spread-spread-point value char)))
 
        (save-excursion (artist-previous-line -1)
-                       (unless (eq (following-char) ?_)
-                         (spread-spread-point value)))
+                       (unless (eq (following-char) char)
+                         (spread-spread-point value char)))
 
        (unless (bolp)
         (save-excursion (backward-char)
-                        (unless (eq (following-char) ?_)
-                          (spread-spread-point value))))))))
+                        (unless (eq (following-char) char)
+                          (spread-spread-point value char))))))))
 
-(defun spread-spread (value)
-  "Spread to all adjacent cells containing VALUE."
-  (interactive)
+(defun spread-spread (value char)
+  "Spread to all adjacent cells containing VALUE from cells containing CHAR."
   (save-excursion
-   (beginning-of-buffer)
-   (setq spread-turns (1+ spread-turns))
-   (spread-update-turns)
-   (while (re-search-forward "_" nil t)
-     (backward-char)
-     (spread-spread-point (spread-number-to-char value))
-     (forward-char))
-   (setq spread-area ())))
+    (beginning-of-buffer)
+    (while (re-search-forward (char-to-string char) nil t)
+      (backward-char)
+      (spread-spread-point (spread-number-to-char value) char)
+      (forward-char))
+    (setq spread-area ())))
+
+(defun spread-player-move (value)
+  "Spread from the player's area to all cells containing VALUE."
+  (interactive)
+  (spread-spread value spread-player-char)
+  (spread-ai-move)
+  (setq spread-turns (1+ spread-turns))
+  (spread-update-turns))
 
 (defun spread-update-turns ()
   "Update the number of turns displayed."
@@ -83,6 +91,15 @@
      (kill-line)
      (insert (format "    Turns: %d" spread-turns)))))
 
+(defun spread-ai-move ()
+  "Choose the move for the enemy AI."
+  (let ((move (1+ (random spread-values))))
+    (if spread-ai-last-move
+        (while (eq move spread-ai-last-move)
+          (setq move (1+ (random spread-values)))))
+    (spread-spread move spread-ai-char)
+    (setq spread-ai-last-move move)))
+
 (defun spread-generate-field (rows columns values)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values."
   (let ((buffer-read-only nil))
@@ -91,9 +108,14 @@
      (--dotimes columns
        (insert (number-to-string (1+ (random values)))))
      (newline))
+   (beginning-of-buffer)
+   (end-of-line)
+   (backward-delete-char 1)
+   (insert spread-ai-char)
+   (end-of-buffer)
    (forward-line -1)
    (delete-char 1)
-   (insert ?_)
+   (insert spread-player-char)
    (backward-char)))
 
 (defun spread (&optional rows columns values)
@@ -118,7 +140,7 @@ The game will have VALUES different values."
   "Bind the N number key to (spread-spread N)."
   (lexical-let ((n n)) #'(lambda ()
                            (interactive)
-                           (spread-spread n))))
+                           (spread-player-move n))))
 
 (defvar spread-mode-map nil)
 (unless spread-mode-map
