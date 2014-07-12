@@ -31,6 +31,8 @@
 (defvar spread-player-char ?_)
 (defvar spread-ai-char ?|)
 (defvar spread-ai-last-move nil)
+(defvar spread-player-score 1)
+(defvar spread-ai-score 1)
 
 (defun spread-number-to-char (number)
   "Convert NUMBER to a character."
@@ -80,16 +82,30 @@
   (spread-spread value spread-player-char)
   (spread-ai-move)
   (setq spread-turns (1+ spread-turns))
-  (spread-update-turns))
+  (spread-update-turns)
+  (spread-update-scores))
 
 (defun spread-update-turns ()
   "Update the number of turns displayed."
   (save-excursion
    (let ((buffer-read-only nil))
-     (end-of-buffer)
+     (with-no-warnings (end-of-buffer))
      (beginning-of-line)
-     (kill-line)
+     (if (not (eolp)) (kill-line))
      (insert (format "    Turns: %d" spread-turns)))))
+
+(defun spread-update-scores ()
+  "Update the scores for the player and ai."
+  (setq spread-player-score (count-matches (char-to-string spread-player-char)
+                                           (point-min) (point-max)))
+  (setq spread-ai-score (count-matches (char-to-string spread-ai-char)
+                                           (point-min) (point-max)))
+
+  (end-of-buffer)
+  (let ((buffer-read-only nil))
+   (insert (format ", Score: %d, Opponent: %d"
+                   spread-player-score
+                   spread-ai-score))))
 
 (defun spread-ai-move ()
   "Choose the move for the enemy AI."
@@ -130,9 +146,13 @@ The game will have VALUES different values."
    (setq columns (if (not columns) spread-columns columns))
    (setq values (if (not values) spread-values values))
    (setq spread-turns 0)
+   (setq spread-ai-score 1)
+   (setq spread-player-score 1)
    (spread-generate-field rows columns values)
    (end-of-buffer)
-   (insert "\n    Turns: 0")
+   (newline)
+   (spread-update-turns)
+   (spread-update-scores)
    (setq cursor-type nil))
   (setq buffer-read-only t))
 
