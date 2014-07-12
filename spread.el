@@ -116,8 +116,9 @@
     (spread-spread move spread-ai-char)
     (setq spread-ai-last-move move)))
 
-(defun spread-generate-field (rows columns values)
-  "Draw the field with size ROWS and COLUMNS, and VALUES different values."
+(defun spread-generate-field (rows columns values &optional random-start)
+  "Draw the field with size ROWS and COLUMNS, and VALUES different values.
+If RANDOM-START is not nil, the player and AI starting positions are randomized."
   (let ((buffer-read-only nil))
    (erase-buffer)
    (--dotimes rows
@@ -125,18 +126,30 @@
        (insert (number-to-string (1+ (random values)))))
      (newline))
    (beginning-of-buffer)
-   (end-of-line)
-   (backward-delete-char 1)
-   (insert spread-ai-char)
-   (end-of-buffer)
-   (forward-line -1)
-   (delete-char 1)
-   (insert spread-player-char)
-   (backward-char)))
+   (if (not random-start)
+       (progn
+         (end-of-line)
+         (backward-delete-char 1)
+         (insert spread-ai-char)
+         (end-of-buffer)
+         (forward-line -1)
+         (delete-char 1)
+         (insert spread-player-char)
+         (backward-char))
+     (forward-line (1+ (random (- rows 2))))
+     (forward-char (1+ (random (- columns 2))))
+     (delete-char 1)
+     (insert spread-player-char)
+     (beginning-of-buffer)
+     (forward-line (1+ (random (- rows 2))))
+     (forward-char (1+ (random (- columns 2))))
+     (delete-char 1)
+     (insert spread-ai-char))))
 
-(defun spread (&optional rows columns values)
+(defun spread (&optional rows columns values random-start)
   "Play a game with size determined by ROWS and COLUMNS.
-The game will have VALUES different values."
+The game will have VALUES different values.  If RANDOM-START is not nill,
+the player and AI starting positions will be randomized."
   (interactive)
   (switch-to-buffer "*spread*")
   (let ((buffer-read-only nil))
@@ -148,7 +161,7 @@ The game will have VALUES different values."
    (setq spread-turns 0)
    (setq spread-ai-score 1)
    (setq spread-player-score 1)
-   (spread-generate-field rows columns values)
+   (spread-generate-field rows columns values random-start)
    (end-of-buffer)
    (newline)
    (spread-update-turns)
