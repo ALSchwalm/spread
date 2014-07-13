@@ -55,31 +55,30 @@
 (defun spread-spread-point (value char)
   "For the current point, spread to all neightbors containing VALUE."
   (let ((buffer-read-only nil))
-   (save-excursion
-     (when (or (eq (following-char) char)
-               (eq (following-char) value))
-       (unless (eq (following-char) char)
-         (delete-char 1)
-         (spread-insert-styled-char char)
-         (backward-char))
+   (when (or (eq (following-char) char)
+             (eq (following-char) value))
+     (unless (eq (following-char) char)
+       (delete-char 1)
+       (spread-insert-styled-char char)
+       (backward-char))
 
-       (unless (eolp)
-        (save-excursion (forward-char)
-                        (unless (eq (following-char) char)
-                          (spread-spread-point value char))))
-
-       (save-excursion (artist-previous-line 1)
+     (unless (eolp)
+       (save-excursion (forward-char)
                        (unless (eq (following-char) char)
-                         (spread-spread-point value char)))
+                         (spread-spread-point value char))))
 
-       (save-excursion (artist-previous-line -1)
+     (save-excursion (artist-previous-line 1)
+                     (unless (eq (following-char) char)
+                       (spread-spread-point value char)))
+
+     (save-excursion (artist-previous-line -1)
+                     (unless (eq (following-char) char)
+                       (spread-spread-point value char)))
+
+     (unless (bolp)
+       (save-excursion (backward-char)
                        (unless (eq (following-char) char)
-                         (spread-spread-point value char)))
-
-       (unless (bolp)
-        (save-excursion (backward-char)
-                        (unless (eq (following-char) char)
-                          (spread-spread-point value char))))))))
+                         (spread-spread-point value char)))))))
 
 (defun spread-spread (value char)
   "Spread to all adjacent cells containing VALUE from cells containing CHAR."
@@ -103,7 +102,7 @@
   "Update the number of turns displayed."
   (save-excursion
    (let ((buffer-read-only nil))
-     (with-no-warnings (end-of-buffer))
+     (end-of-buffer)
      (beginning-of-line)
      (if (not (eolp)) (kill-line))
      (insert (format "    Turns: %d" spread-turns)))))
@@ -123,12 +122,16 @@
 
 (defun spread-ai-move ()
   "Choose the move for the enemy AI."
-  (let ((move (1+ (random spread-values))))
-    (if spread-ai-last-move
-        (while (eq move spread-ai-last-move)
-          (setq move (1+ (random spread-values)))))
-    (spread-spread move spread-ai-char)
-    (setq spread-ai-last-move move)))
+  (if (not spread-ai-last-move)
+      (setq spread-ai-last-move (1+ (random spread-values)))
+
+    (let ((n '()))
+     (--dotimes spread-values (setq n (cons (1+ it) n)))
+     (setq n (--remove (eq it spread-ai-last-move) n))
+     (setq spread-ai-last-move (nth (random (length n)) n)))
+
+    (spread-spread spread-ai-last-move spread-ai-char)
+    (message (number-to-string spread-ai-last-move))))
 
 (defun spread-generate-field (rows columns values &optional random-start)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values.
