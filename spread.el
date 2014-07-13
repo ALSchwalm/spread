@@ -33,10 +33,24 @@
 (defvar spread-ai-last-move nil)
 (defvar spread-player-score 1)
 (defvar spread-ai-score 1)
+(defvar spread-ai-text-properties '(:background "red" :foreground "red"))
+(defvar spread-player-text-properties '(:background "steel blue" :foreground "steel blue"))
+(defvar spread-use-styled-text t)
 
 (defun spread-number-to-char (number)
   "Convert NUMBER to a character."
   (+ number 48))
+
+(defun spread-insert-styled-char (char)
+  "Insert CHAR with PROPERTIES."
+  (let ((buffer-read-only nil))
+    (if spread-use-styled-text
+     (if (eq char spread-player-char)
+         (insert (propertize (char-to-string char)
+                             'face spread-player-text-properties))
+       (insert (propertize (char-to-string char)
+                           'face spread-ai-text-properties)))
+     (insert char))))
 
 (defun spread-spread-point (value char)
   "For the current point, spread to all neightbors containing VALUE."
@@ -44,9 +58,10 @@
    (save-excursion
      (when (or (eq (following-char) char)
                (eq (following-char) value))
-       (delete-char 1)
-       (insert char)
-       (backward-char)
+       (unless (eq (following-char) char)
+         (delete-char 1)
+         (spread-insert-styled-char char)
+         (backward-char))
 
        (unless (eolp)
         (save-excursion (forward-char)
@@ -73,8 +88,7 @@
     (while (re-search-forward (char-to-string char) nil t)
       (backward-char)
       (spread-spread-point (spread-number-to-char value) char)
-      (forward-char))
-    (setq spread-area ())))
+      (forward-char))))
 
 (defun spread-player-move (value)
   "Spread from the player's area to all cells containing VALUE."
@@ -130,26 +144,27 @@ If RANDOM-START is not nil, the player and AI starting positions are randomized.
        (progn
          (end-of-line)
          (backward-delete-char 1)
-         (insert spread-ai-char)
+         (spread-insert-styled-char spread-ai-char)
          (end-of-buffer)
          (forward-line -1)
          (delete-char 1)
-         (insert spread-player-char)
+         (spread-insert-styled-char spread-player-char)
          (backward-char))
      (forward-line (1+ (random (- rows 2))))
      (forward-char (1+ (random (- columns 2))))
      (delete-char 1)
-     (insert spread-player-char)
+     (spread-insert-styled-char spread-player-char)
      (beginning-of-buffer)
      (forward-line (1+ (random (- rows 2))))
      (forward-char (1+ (random (- columns 2))))
      (delete-char 1)
-     (insert spread-ai-char))))
+     (spread-insert-styled-char spread-ai-char))))
 
-(defun spread (&optional rows columns values random-start)
+(defun spread (&optional rows columns values random-start no-styled-text)
   "Play a game with size determined by ROWS and COLUMNS.
 The game will have VALUES different values.  If RANDOM-START is not nill,
-the player and AI starting positions will be randomized."
+the player and AI starting positions will be randomized.  If NO-STYLED-TEXT
+is non-nil, the 'owned' region for the player and AI will not be colored."
   (interactive)
   (switch-to-buffer "*spread*")
   (let ((buffer-read-only nil))
@@ -161,6 +176,7 @@ the player and AI starting positions will be randomized."
    (setq spread-turns 0)
    (setq spread-ai-score 1)
    (setq spread-player-score 1)
+   (setq spread-use-styled-text (not no-styled-text))
    (spread-generate-field rows columns values random-start)
    (end-of-buffer)
    (newline)
