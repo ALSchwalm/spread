@@ -33,6 +33,7 @@
 (defvar spread-ai-last-move nil)
 (defvar spread-player-score 1)
 (defvar spread-ai-score 1)
+(defvar spread-random-start nil)
 (defvar spread-ai-text-properties '(:background "red" :foreground "red"))
 (defvar spread-player-text-properties '(:background "steel blue" :foreground "steel blue"))
 (defvar spread-use-styled-text t)
@@ -163,6 +164,22 @@ If RANDOM-START is not nil, the player and AI starting positions are randomized.
      (delete-char 1)
      (spread-insert-styled-char spread-ai-char))))
 
+(defun spread-reset ()
+  "Reset the current game of spread."
+  (interactive)
+  (setq spread-turns 0)
+  (setq spread-ai-score 1)
+  (setq spread-player-score 1)
+  (let ((buffer-read-only nil))
+    (spread-generate-field spread-rows
+                           spread-columns
+                           spread-values
+                           spread-random-start)
+    (end-of-buffer)
+    (newline)
+    (spread-update-turns)
+    (spread-update-scores)))
+
 (defun spread (&optional rows columns values random-start no-styled-text)
   "Play a game with size determined by ROWS and COLUMNS.
 The game will have VALUES different values.  If RANDOM-START is not nill,
@@ -180,6 +197,7 @@ is non-nil, the 'owned' region for the player and AI will not be colored."
    (setq spread-ai-score 1)
    (setq spread-player-score 1)
    (setq spread-use-styled-text (not no-styled-text))
+   (setq spread-random-start random-start)
    (spread-generate-field rows columns values random-start)
    (end-of-buffer)
    (newline)
@@ -199,6 +217,7 @@ is non-nil, the 'owned' region for the player and AI will not be colored."
   (setq spread-mode-map (make-keymap))
   (suppress-keymap spread-mode-map t)
   (define-key spread-mode-map "q" 'bury-buffer)
+  (define-key spread-mode-map "r" 'spread-reset)
   (--dotimes 10
     (define-key spread-mode-map (number-to-string it)
       (spread-with-key it))))
