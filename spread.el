@@ -22,7 +22,6 @@
 ;;; Code:
 
 (require 'dash)
-(require 'artist)
 
 (defvar spread-rows 40)
 (defvar spread-columns 40)
@@ -41,6 +40,15 @@
 (defun spread-number-to-char (number)
   "Convert NUMBER to a character."
   (+ number 48))
+
+(defun spread-move-up ()
+  "Move directly up from the point."
+  (when (> (- (point) (1+ spread-columns)) 0)
+    (goto-char (- (point) (1+ spread-columns)))))
+
+(defun spread-move-down ()
+  "Move directly down from the point."
+  (goto-char (+ (point) (1+ spread-columns))))
 
 (defun spread-insert-styled-char (char)
   "Insert CHAR with PROPERTIES."
@@ -68,11 +76,11 @@
                        (unless (eq (following-char) char)
                          (spread-spread-point value char))))
 
-     (save-excursion (artist-previous-line 1)
+     (save-excursion (spread-move-up)
                      (unless (eq (following-char) char)
                        (spread-spread-point value char)))
 
-     (save-excursion (artist-previous-line -1)
+     (save-excursion (spread-move-down)
                      (unless (eq (following-char) char)
                        (spread-spread-point value char)))
 
@@ -167,18 +175,20 @@ If RANDOM-START is not nil, the player and AI starting positions are randomized.
 (defun spread-reset ()
   "Reset the current game of spread."
   (interactive)
-  (setq spread-turns 0)
-  (setq spread-ai-score 1)
-  (setq spread-player-score 1)
-  (let ((buffer-read-only nil))
-    (spread-generate-field spread-rows
-                           spread-columns
-                           spread-values
-                           spread-random-start)
-    (end-of-buffer)
-    (newline)
-    (spread-update-turns)
-    (spread-update-scores)))
+  (if (not (eq major-mode 'spread-mode))
+      (message "No spread game to reset.")
+    (setq spread-turns 0)
+    (setq spread-ai-score 1)
+    (setq spread-player-score 1)
+    (let ((buffer-read-only nil))
+      (spread-generate-field spread-rows
+                             spread-columns
+                             spread-values
+                             spread-random-start)
+      (end-of-buffer)
+      (newline)
+      (spread-update-turns)
+      (spread-update-scores))))
 
 (defun spread (&optional rows columns values random-start no-styled-text)
   "Play a game with size determined by ROWS and COLUMNS.
