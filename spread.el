@@ -19,6 +19,46 @@
 
 ;;; Commentary:
 
+;;; Spread is a puzzle game in which the player (or players) attempt to
+;;; capture the largest ammount of 'area' in the fewest turns.  This area
+;;; is represented by a numeric grid.  For example:
+
+;;;     5333|
+;;;     44541
+;;;     12224
+;;;     51434
+;;;     _3545
+
+;;; The '_' represents the player's position, while the '|' represents the
+;;; opponent's.  On each player's turn, he or she will choose a number.  They
+;;; will then capture all area adjacent to their currently controlled area,
+;;; which contains the chosen number.  Player's alternate turns in this fasion
+;;; until all area is captured.  Using the previous board, suppose the player
+;;; chose '5'.  The board would then look like this:
+
+;;;     5333|
+;;;     44541
+;;;     12224
+;;;     _1434
+;;;     _3545
+
+;;; If the opponent chose '3', the board would become:
+
+;;;     5||||
+;;;     44541
+;;;     12224
+;;;     _1434
+;;;     _3545
+
+;;; Note that the opponent's choice of '3' captures all '3's adjacent to
+;;; his or her area, even if that adjacency is the result of area captured
+;;; during the course of the current 'move'.  The amount of area controlled
+;;; by each player as well as the number of turns taken is displayed at the
+;;; bottom of the screen.  In the above example, the following would be
+;;; displayed:
+
+;;;     Turns: 1, Score: 2, Opponent: 4
+
 ;;; Code:
 
 (require 'dash)
