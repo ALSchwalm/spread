@@ -81,14 +81,16 @@
   "Convert NUMBER to a character."
   (+ number 48))
 
-(defun spread-move-up ()
-  "Move directly up from the point."
-  (when (> (- (point) (1+ spread-columns)) 0)
-    (goto-char (- (point) (1+ spread-columns)))))
+(defun spread-move-up (&optional n)
+  "Move directly up from the point N lines."
+  (let ((n (or n 1)))
+   (when (> (- (point) (1+ spread-columns)) 0)
+     (goto-char (- (point) (+ n (* n spread-columns)))))))
 
-(defun spread-move-down ()
-  "Move directly down from the point."
-  (goto-char (+ (point) (1+ spread-columns))))
+(defun spread-move-down (&optional n)
+  "Move directly down from the point N lines."
+  (let ((n (or n 1)))
+   (goto-char (+ (point) (+ n (* n spread-columns))))))
 
 (defun spread-insert-styled-char (char)
   "Insert CHAR with PROPERTIES."
@@ -195,12 +197,14 @@
                    (setq best it)
                    (setq best-count temp-count)))
        (setq spread-ai-last-move best)))
-    (spread-spread spread-ai-last-move spread-ai-char)
-    (message (number-to-string spread-ai-last-move))))
+    (spread-spread spread-ai-last-move spread-ai-char)))
 
 (defun spread-generate-field (rows columns values &optional random-start)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values.
-If RANDOM-START is not nil, the player and AI starting positions are randomized."
+If RANDOM-START is nil, the player and AI will start in opposite corners.
+Otherwise, if RANDOM-START is t or 'symmetric, the play and AI positions will
+be in random diagonally symmetric positions.  If RANDOM-START is 'random, the
+players positions will be entirely random."
   (let ((buffer-read-only nil))
    (erase-buffer)
    (--dotimes rows
@@ -208,25 +212,40 @@ If RANDOM-START is not nil, the player and AI starting positions are randomized.
        (insert (number-to-string (1+ (random values)))))
      (newline))
    (beginning-of-buffer)
-   (if (not random-start)
-       (progn
-         (end-of-line)
-         (backward-delete-char 1)
-         (spread-insert-styled-char spread-ai-char)
-         (end-of-buffer)
-         (forward-line -1)
-         (delete-char 1)
-         (spread-insert-styled-char spread-player-char)
-         (backward-char))
-     (forward-line (1+ (random (- rows 2))))
-     (forward-char (1+ (random (- columns 2))))
-     (delete-char 1)
-     (spread-insert-styled-char spread-player-char)
-     (beginning-of-buffer)
-     (forward-line (1+ (random (- rows 2))))
-     (forward-char (1+ (random (- columns 2))))
-     (delete-char 1)
-     (spread-insert-styled-char spread-ai-char))))
+   (cond ((eq random-start nil)
+          (end-of-line)
+          (backward-delete-char 1)
+          (spread-insert-styled-char spread-ai-char)
+          (end-of-buffer)
+          (forward-line -1)
+          (delete-char 1)
+          (spread-insert-styled-char spread-player-char)
+          (backward-char))
+         ((or (eq random-start 'symmetric)
+              (eq random-start t))
+          (let ((random-x (+ 2 (random (- columns 2))))
+                (random-y (+ 2 (random (- rows 2)))))
+            (end-of-line)
+            (backward-char random-x)
+            (spread-move-down random-y)
+            (delete-char 1)
+            (spread-insert-styled-char spread-ai-char)
+            (end-of-buffer)
+            (forward-line -1)
+            (forward-char random-x)
+            (spread-move-up random-y)
+            (backward-delete-char 1)
+            (spread-insert-styled-char spread-player-char)))
+         ((eq random-start 'random)
+          (forward-line (1+ (random (- rows 2))))
+          (forward-char (1+ (random (- columns 2))))
+          (delete-char 1)
+          (spread-insert-styled-char spread-player-char)
+          (beginning-of-buffer)
+          (forward-line (1+ (random (- rows 2))))
+          (forward-char (1+ (random (- columns 2))))
+          (delete-char 1)
+          (spread-insert-styled-char spread-ai-char)))))
 
 (defun spread-reset ()
   "Reset the current game of spread."
