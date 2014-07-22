@@ -174,11 +174,27 @@
   (if (not spread-ai-last-move)
       (setq spread-ai-last-move (1+ (random spread-values)))
 
-    (let ((n '()))
-     (--dotimes spread-values (setq n (cons (1+ it) n)))
-     (setq n (--remove (eq it spread-ai-last-move) n))
-     (setq spread-ai-last-move (nth (random (length n)) n)))
+    (let ((best nil)
+          (best-count -1)
+          (temp-count -1)
+          (n '()))
+     (if (not spread-ai-last-move)
+         (setq spread-ai-last-move (random spread-values))
 
+       (--dotimes spread-values (setq n (cons (1+ it) n)))
+       (setq n (--remove (eq it spread-ai-last-move) n))
+
+       (--each n (when (> (setq temp-count (count-matches
+                                            (format "\\(%s%s\\)\\|\\(%s%s\\)"
+                                                    (number-to-string it)
+                                                    (char-to-string spread-ai-char)
+                                                    (char-to-string spread-ai-char)
+                                                    (number-to-string it))
+                                            (point-min) (point-max)))
+                          best-count)
+                   (setq best it)
+                   (setq best-count temp-count)))
+       (setq spread-ai-last-move best)))
     (spread-spread spread-ai-last-move spread-ai-char)
     (message (number-to-string spread-ai-last-move))))
 
