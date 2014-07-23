@@ -72,7 +72,7 @@
 (defvar spread-ai-last-move nil)
 (defvar spread-player-score 1)
 (defvar spread-ai-score 1)
-(defvar spread-random-start nil)
+(defvar spread-start-position nil)
 (defvar spread-ai-text-properties '(:background "red" :foreground "red"))
 (defvar spread-player-text-properties '(:background "steel blue" :foreground "steel blue"))
 (defvar spread-use-styled-text t)
@@ -199,12 +199,13 @@
        (setq spread-ai-last-move best)))
     (spread-spread spread-ai-last-move spread-ai-char)))
 
-(defun spread-generate-field (rows columns values &optional random-start)
+(defun spread-generate-field (rows columns values &optional start-position)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values.
-If RANDOM-START is nil, the player and AI will start in opposite corners.
-Otherwise, if RANDOM-START is t or 'symmetric, the play and AI positions will
-be in random diagonally symmetric positions.  If RANDOM-START is 'random, the
-players positions will be entirely random."
+START-POSITION may be one of three values.  If it is nil or 'symmmetric,
+the player and ai will start in random symmetrical positions.  If it is
+'opposite, the players will be positioned diagonally across from each
+other.  If START-POSITION has the value 'random, starting positions are
+completely randomized."
   (let ((buffer-read-only nil))
    (erase-buffer)
    (--dotimes rows
@@ -212,7 +213,7 @@ players positions will be entirely random."
        (insert (number-to-string (1+ (random values)))))
      (newline))
    (beginning-of-buffer)
-   (cond ((eq random-start nil)
+   (cond ((eq start-position 'opposite)
           (end-of-line)
           (backward-delete-char 1)
           (spread-insert-styled-char spread-ai-char)
@@ -221,8 +222,8 @@ players positions will be entirely random."
           (delete-char 1)
           (spread-insert-styled-char spread-player-char)
           (backward-char))
-         ((or (eq random-start 'symmetric)
-              (eq random-start t))
+         ((or (eq start-position 'symmetric)
+              (eq start-position nil))
           (let ((random-x (+ 2 (random (- columns 2))))
                 (random-y (+ 2 (random (- rows 2)))))
             (end-of-line)
@@ -236,7 +237,7 @@ players positions will be entirely random."
             (spread-move-up random-y)
             (backward-delete-char 1)
             (spread-insert-styled-char spread-player-char)))
-         ((eq random-start 'random)
+         ((eq start-position 'random)
           (forward-line (1+ (random (- rows 2))))
           (forward-char (1+ (random (- columns 2))))
           (delete-char 1)
@@ -259,17 +260,20 @@ players positions will be entirely random."
       (spread-generate-field spread-rows
                              spread-columns
                              spread-values
-                             spread-random-start)
+                             spread-start-position)
       (end-of-buffer)
       (newline)
       (spread-update-turns)
       (spread-update-scores))))
 
-(defun spread (&optional rows columns values random-start no-styled-text)
+(defun spread (&optional rows columns values start-position no-styled-text)
   "Play a game with size determined by ROWS and COLUMNS.
-The game will have VALUES different values.  If RANDOM-START is not nill,
-the player and AI starting positions will be randomized.  If NO-STYLED-TEXT
-is non-nil, the 'owned' region for the player and AI will not be colored."
+The game will have VALUES different values.  START-POSITION may be one of
+three values.  If it is nil or 'symmmetric, the player and ai will start
+in random symmetrical positions.  If it is 'opposite, the players will be
+positioned diagonally across from each other.  If START-POSITION has the
+value 'random, starting positions are completely randomized.  If NO-STYLED-TEXT
+is non-nil, the 'owned' region for the player and AI willf not be colored."
   (interactive)
   (switch-to-buffer "*spread*")
   (let ((buffer-read-only nil))
@@ -282,8 +286,8 @@ is non-nil, the 'owned' region for the player and AI will not be colored."
    (setq spread-ai-score 1)
    (setq spread-player-score 1)
    (setq spread-use-styled-text (not no-styled-text))
-   (setq spread-random-start random-start)
-   (spread-generate-field rows columns values random-start)
+   (setq spread-start-position start-position)
+   (spread-generate-field rows columns values start-position)
    (end-of-buffer)
    (newline)
    (spread-update-turns)
