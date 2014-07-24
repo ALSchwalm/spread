@@ -143,11 +143,12 @@
 (defun spread-player-move (value)
   "Spread from the player's area to all cells containing VALUE."
   (interactive)
-  (spread-spread value spread-player-char)
-  (spread-ai-move)
-  (setq spread-turns (1+ spread-turns))
-  (spread-update-turns)
-  (spread-update-scores))
+  (when (<= value spread-values)
+    (spread-spread value spread-player-char)
+    (spread-ai-move)
+    (setq spread-turns (1+ spread-turns))
+    (spread-update-turns)
+    (spread-update-scores)))
 
 (defun spread-update-turns ()
   "Update the number of turns displayed."
@@ -307,9 +308,9 @@ is non-nil, the 'owned' region for the player and AI willf not be colored."
   (suppress-keymap spread-mode-map t)
   (define-key spread-mode-map "q" 'bury-buffer)
   (define-key spread-mode-map "r" 'spread-reset)
-  (--dotimes 10
-    (define-key spread-mode-map (number-to-string it)
-      (spread-with-key it))))
+  (--dotimes 9
+    (define-key spread-mode-map (number-to-string (1+ it))
+      (spread-with-key (1+ it)))))
 
 (define-derived-mode spread-mode nil "spread"
   "A mode for playing spread
