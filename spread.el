@@ -20,7 +20,7 @@
 ;;; Commentary:
 
 ;;; Spread is a puzzle game in which the player (or players) attempt to
-;;; capture the largest ammount of 'area' in the fewest turns.  This area
+;;; capture the largest amount of 'area' in the fewest turns.  This area
 ;;; is represented by a numeric grid.  For example:
 
 ;;;     5333|
@@ -32,7 +32,7 @@
 ;;; The '_' represents the player's position, while the '|' represents the
 ;;; opponent's.  On each player's turn, he or she will choose a number.  They
 ;;; will then capture all area adjacent to their currently controlled area,
-;;; which contains the chosen number.  Player's alternate turns in this fasion
+;;; which contains the chosen number.  Player's alternate turns in this fashion
 ;;; until all area is captured.  Using the previous board, suppose the player
 ;;; chose '5'.  The board would then look like this:
 
@@ -104,7 +104,7 @@
      (insert char))))
 
 (defun spread-spread-point (value char)
-  "For the current point, spread to all neightbors containing VALUE."
+  "For the current point, spread to all neighbors containing VALUE from cells containing CHAR."
   (let ((buffer-read-only nil))
    (when (or (eq (following-char) char)
              (eq (following-char) value))
@@ -160,7 +160,7 @@
      (insert (format "    Turns: %d" spread-turns)))))
 
 (defun spread-update-scores ()
-  "Update the scores for the player and ai."
+  "Update the scores for the player and AI."
   (setq spread-player-score (count-matches (char-to-string spread-player-char)
                                            (point-min) (point-max)))
   (setq spread-ai-score (count-matches (char-to-string spread-ai-char)
@@ -202,8 +202,8 @@
 
 (defun spread-generate-field (rows columns values &optional start-position)
   "Draw the field with size ROWS and COLUMNS, and VALUES different values.
-START-POSITION may be one of three values.  If it is nil or 'symmmetric,
-the player and ai will start in random symmetrical positions.  If it is
+START-POSITION may be one of three values.  If it is nil or 'symmetric,
+the player and AI will start in random symmetrical positions.  If it is
 'opposite, the players will be positioned diagonally across from each
 other.  If START-POSITION has the value 'random, starting positions are
 completely randomized."
@@ -270,11 +270,11 @@ completely randomized."
 (defun spread (&optional rows columns values start-position no-styled-text)
   "Play a game with size determined by ROWS and COLUMNS.
 The game will have VALUES different values.  START-POSITION may be one of
-three values.  If it is nil or 'symmmetric, the player and ai will start
+three values.  If it is nil or 'symmmetric, the player and AI will start
 in random symmetrical positions.  If it is 'opposite, the players will be
 positioned diagonally across from each other.  If START-POSITION has the
 value 'random, starting positions are completely randomized.  If NO-STYLED-TEXT
-is non-nil, the 'owned' region for the player and AI willf not be colored."
+is non-nil, the 'owned' region for the player and AI will not be colored."
   (interactive)
   (switch-to-buffer "*spread*")
   (let ((buffer-read-only nil))
