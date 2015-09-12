@@ -304,6 +304,7 @@ is non-nil, the 'owned' region for the player and AI will not be colored."
 
 (defvar spread-mode-map nil)
 (unless spread-mode-map
+  (setq lexical-binding t)
   (setq spread-mode-map (make-keymap))
   (suppress-keymap spread-mode-map t)
   (define-key spread-mode-map "q" 'bury-buffer)
